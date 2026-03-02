@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getColleges } from '@/app/actions/admin-actions'
 
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(true)
@@ -38,8 +39,8 @@ export default function AuthPage() {
     }, [])
 
     async function fetchColleges() {
-        const { data } = await supabase.from('colleges').select('*').order('name')
-        if (data) setColleges(data)
+        const data = await getColleges()
+        setColleges(data)
     }
 
     const handleCollegeSelect = (college: any) => {

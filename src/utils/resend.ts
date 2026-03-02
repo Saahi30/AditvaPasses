@@ -3,12 +3,12 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendTicketEmail(to: string, eventName: string, passId: string) {
-    try {
-        const data = await resend.emails.send({
-            from: 'Aditva Passes <onboarding@resend.dev>', // You can change this to your domain later
-            to: [to],
-            subject: `Your Entry Pass for ${eventName}`,
-            html: `
+  try {
+    const data = await resend.emails.send({
+      from: 'Aditva Passes <team@sharesaathi.com>',
+      to: [to],
+      subject: `Your Entry Pass for ${eventName}`,
+      html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0b; color: white; padding: 40px; border-radius: 20px;">
           <h1 style="color: #edff66; font-size: 24px;">Aditva Passes</h1>
           <p>Hey student!</p>
@@ -30,11 +30,41 @@ export async function sendTicketEmail(to: string, eventName: string, passId: str
           <p style="font-size: 12px; color: #666;">This is an automated delivery from Aditva Passes.</p>
         </div>
       `,
-        });
+    });
 
-        return { success: true, data };
-    } catch (error) {
-        console.error('Email Error:', error);
-        return { success: false, error };
-    }
+    return { success: true, data };
+  } catch (error) {
+    console.error('Email Error:', error);
+    return { success: false, error };
+  }
+}
+export async function sendOTPEmail(to: string, otp: string) {
+  try {
+    const data = await resend.emails.send({
+      from: 'Aditva Passes <team@sharesaathi.com>',
+      to: [to],
+      subject: `${otp} is your Aditva Passes verification code`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0b; color: white; padding: 40px; border-radius: 20px;">
+          <h1 style="color: #edff66; font-size: 24px;">Aditva Passes</h1>
+          <p>Verify your email address to get started.</p>
+          
+          <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+             <p style="margin-bottom: 8px; font-size: 14px; color: #a1a1aa;">VERIFICATION CODE</p>
+             <h2 style="margin: 0; font-size: 48px; letter-spacing: 12px; color: #edff66; font-weight: 800;">${otp}</h2>
+          </div>
+
+          <p style="font-size: 14px; color: #a1a1aa;">This code will expire in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+          
+          <hr style="margin-top: 40px; border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
+          <p style="font-size: 12px; color: #666;">This is an automated security email from Aditva Passes.</p>
+        </div>
+      `,
+    });
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('OTP Email Error:', error);
+    return { success: false, error };
+  }
 }

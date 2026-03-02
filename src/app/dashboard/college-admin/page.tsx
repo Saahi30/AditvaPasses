@@ -6,9 +6,9 @@ import {
     Plus, Ticket, QrCode, Filter, MoreVertical, Loader2,
     Calendar, MapPin, CheckCircle2, Users, Building2,
     Trash2, Image as ImageIcon, Link as LinkIcon, Info, X,
-    Send
+    Send, Settings, BarChart3, GraduationCap, CheckCircle
 } from 'lucide-react'
-import { createClub, getClubs, deleteClub, issuePasses } from '@/app/actions/admin-actions'
+import { createClub, getClubs, deleteClub, issuePasses, updateCollege, deleteEvent, updateEvent, getCollegeAnalytics, getStudents } from '@/app/actions/admin-actions'
 import Scanner from '@/components/Scanner'
 
 const TagSelect = ({
@@ -85,9 +85,11 @@ const TagSelect = ({
 }
 
 export default function CollegeAdminDashboard() {
-    const [activeTab, setActiveTab] = useState<'events' | 'clubs'>('events')
+    const [activeTab, setActiveTab] = useState<'events' | 'clubs' | 'settings' | 'students'>('events')
     const [events, setEvents] = useState<any[]>([])
     const [clubs, setClubs] = useState<any[]>([])
+    const [students, setStudents] = useState<any[]>([])
+    const [analytics, setAnalytics] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [collegeId, setCollegeId] = useState<string | null>(null)
     const [showScanner, setShowScanner] = useState(false)
@@ -117,8 +119,14 @@ export default function CollegeAdminDashboard() {
     const [loc, setLoc] = useState('')
     const [selectedClub, setSelectedClub] = useState('')
     const [brochureUrl, setBrochureUrl] = useState('')
-    const [imageUrl, setImageUrl] = useState('') // Just one for now for simplicity in UI
+    const [imageUrl, setImageUrl] = useState('')
+    const [capacity, setCapacity] = useState('0')
     const [isCreatingEvent, setIsCreatingEvent] = useState(false)
+    const [editingEventId, setEditingEventId] = useState<string | null>(null)
+
+    // Settings State
+    const [domain, setDomain] = useState('')
+    const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
 
     const supabase = createClient()
 
@@ -138,17 +146,76 @@ export default function CollegeAdminDashboard() {
 
         if (profile?.college_id) {
             setCollegeId(profile.college_id)
-            const [eventsData, clubsData, collegeRes] = await Promise.all([
+            const [eventsData, clubsData, collegeRes, stats, stds, passesData] = await Promise.all([
                 supabase.from('events').select('*, clubs(*)').eq('college_id', profile.college_id).order('created_at', { ascending: false }),
                 getClubs(profile.college_id),
-                supabase.from('colleges').select('*').eq('id', profile.college_id).single()
+                supabase.from('colleges').select('*').eq('id', profile.college_id).single(),
+                getCollegeAnalytics(profile.college_id),
+                getStudents(profile.college_id),
+                supabase.from('passes').select('event_id').eq('status', 'used')
             ])
 
-            if (eventsData.data) setEvents(eventsData.data)
+            if (eventsData.data) {
+                const eventsWithCounts = eventsData.data.map((event: any) => ({
+                    ...event,
+                    scannedCount: passesData.data?.filter((p: any) => p.event_id === event.id).length || 0
+                }))
+                setEvents(eventsWithCounts)
+            }
             if (clubsData) setClubs(clubsData)
-            if (collegeRes.data) setCollegeData(collegeRes.data)
+            setAnalytics(stats)
+            setStudents(stds)
+            if (collegeRes.data) {
+                setCollegeData(collegeRes.data)
+                setDomain(collegeRes.data.email_domain || '')
+            }
+
+            // Real-time subscription for live attendance
+            const channel = supabase
+                .channel('admin-live-attendance')
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'passes'
+                }, (payload) => {
+                    if (payload.new.status === 'used' && payload.old.status !== 'used') {
+                        setEvents(currentEvents => currentEvents.map((ev: any) =>
+                            ev.id === payload.new.event_id
+                                ? { ...ev, scannedCount: (ev.scannedCount || 0) + 1 }
+                                : ev
+                        ))
+                        // Also update analytics at the top
+                        setAnalytics((prev: any) => ({
+                            ...prev,
+                            passesScanned: (prev?.passesScanned || 0) + 1
+                        }))
+                    }
+                })
+                .subscribe()
+
+            return () => {
+                supabase.removeChannel(channel)
+            }
         }
         setLoading(false)
+    }
+
+    const handleUpdateSettings = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!collegeId) return
+        setIsUpdatingSettings(true)
+
+        const result = await updateCollege(collegeId, {
+            email_domain: domain
+        })
+
+        if (result.success) {
+            alert('Settings updated successfully!')
+            fetchInitialData()
+        } else {
+            alert(result.error || 'Failed to update settings')
+        }
+        setIsUpdatingSettings(false)
     }
 
     const handleCreateClub = async (e: React.FormEvent) => {
@@ -192,7 +259,7 @@ export default function CollegeAdminDashboard() {
 
         const { data: { user } } = await supabase.auth.getUser()
 
-        const { error } = await supabase.from('events').insert({
+        const eventData = {
             title,
             description: desc,
             event_date: date,
@@ -202,21 +269,55 @@ export default function CollegeAdminDashboard() {
             images: imageUrl ? [imageUrl] : [],
             college_id: collegeId,
             organizer_id: user?.id,
-            is_published: true
-        })
+            is_published: true,
+            max_capacity: parseInt(capacity) || 0
+        }
 
-        if (!error) {
-            setTitle('')
-            setDesc('')
-            setDate('')
-            setLoc('')
-            setSelectedClub('')
-            setBrochureUrl('')
-            setImageUrl('')
-            setShowCreateEvent(false)
+        if (editingEventId) {
+            const result = await updateEvent(editingEventId, eventData)
+            if (result.success) {
+                setShowCreateEvent(false)
+                setEditingEventId(null)
+                fetchInitialData()
+            }
+        } else {
+            const { error } = await supabase.from('events').insert(eventData)
+            if (!error) {
+                setShowCreateEvent(false)
+                fetchInitialData()
+            }
+        }
+
+        setTitle('')
+        setDesc('')
+        setDate('')
+        setLoc('')
+        setSelectedClub('')
+        setBrochureUrl('')
+        setImageUrl('')
+        setCapacity('0')
+        setIsCreatingEvent(false)
+    }
+
+    const handleDeleteEvent = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this event? This will also invalidate all issued passes.')) return
+        const result = await deleteEvent(id)
+        if (result.success) {
             fetchInitialData()
         }
-        setIsCreatingEvent(false)
+    }
+
+    const openEditEventModal = (event: any) => {
+        setEditingEventId(event.id)
+        setTitle(event.title)
+        setDesc(event.description)
+        setDate(new Date(event.event_date).toISOString().slice(0, 16))
+        setLoc(event.location)
+        setSelectedClub(event.club_id || '')
+        setBrochureUrl(event.brochure_url || '')
+        setImageUrl(event.images?.[0] || '')
+        setCapacity(event.max_capacity?.toString() || '0')
+        setShowCreateEvent(true)
     }
 
     const handleIssuePasses = async (e: React.FormEvent) => {
@@ -270,10 +371,61 @@ export default function CollegeAdminDashboard() {
                     >
                         Clubs
                     </button>
+                    <button
+                        onClick={() => setActiveTab('students')}
+                        className={activeTab === 'students' ? 'button button-primary' : 'button button-outline'}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Users size={18} /> Students
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={activeTab === 'settings' ? 'button button-primary' : 'button button-outline'}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Settings size={18} /> Settings
+                    </button>
                 </div>
             </header>
 
-            {activeTab === 'events' ? (
+            {/* Analytics Summary */}
+            <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '48px' }}>
+                <div className="glass" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <GraduationCap size={20} style={{ color: 'var(--primary)' }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Students</span>
+                    </div>
+                    <h2 style={{ fontSize: '2rem' }}>{analytics?.students || 0}</h2>
+                </div>
+                <div className="glass" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <BarChart3 size={20} style={{ color: 'var(--primary)' }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Active Events</span>
+                    </div>
+                    <h2 style={{ fontSize: '2rem' }}>{analytics?.events || 0}</h2>
+                </div>
+                <div className="glass" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <Send size={20} style={{ color: 'var(--primary)' }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Passes Issued</span>
+                    </div>
+                    <h2 style={{ fontSize: '2rem' }}>{analytics?.passesIssued || 0}</h2>
+                </div>
+                <div className="glass" style={{ padding: '24px', border: '1px solid rgba(237, 255, 102, 0.2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <CheckCircle size={20} style={{ color: 'var(--primary)' }} />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Attendance</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                        <h2 style={{ fontSize: '2rem' }}>{analytics?.passesScanned || 0}</h2>
+                        <span style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem' }}>
+                            {analytics?.passesIssued > 0 ? Math.round((analytics.passesScanned / analytics.passesIssued) * 100) : 0}%
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            {activeTab === 'events' && (
                 <section>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <h2 style={{ fontSize: '1.5rem' }}>Upcoming Events</h2>
@@ -289,19 +441,29 @@ export default function CollegeAdminDashboard() {
                             <div className="glass" style={{ padding: '60px', textAlign: 'center', gridColumn: '1/-1' }}>
                                 <p style={{ color: 'var(--muted-foreground)' }}>No events created yet.</p>
                             </div>
-                        ) : events.map(event => (
+                        ) : events.map((event: any) => (
                             <div key={event.id} className="glass animate-fade" style={{ overflow: 'hidden' }}>
                                 <div style={{ padding: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                        <div style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '100px',
-                                            backgroundColor: 'rgba(237, 255, 102, 0.1)',
-                                            color: 'var(--primary)',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            {event.clubs?.name || 'GENERIC'}
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <div style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '100px',
+                                                backgroundColor: 'rgba(237, 255, 102, 0.1)',
+                                                color: 'var(--primary)',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                {event.clubs?.name || 'GENERIC'}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button onClick={() => openEditEventModal(event)} style={{ background: 'none', border: 'none', color: 'var(--muted-foreground)', cursor: 'pointer', padding: '4px' }}>
+                                                <MoreVertical size={16} />
+                                            </button>
+                                            <button onClick={() => handleDeleteEvent(event.id)} style={{ background: 'none', border: 'none', color: '#ff5555', cursor: 'pointer', padding: '4px' }}>
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </div>
 
@@ -314,6 +476,23 @@ export default function CollegeAdminDashboard() {
                                             <MapPin size={16} /> {event.location}
                                         </div>
                                     </div>
+
+                                    {event.max_capacity > 0 && (
+                                        <div style={{ marginBottom: '24px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '8px' }}>
+                                                <span style={{ color: 'var(--muted-foreground)' }}>Day-of Attendance</span>
+                                                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{event.scannedCount} / {event.max_capacity}</span>
+                                            </div>
+                                            <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '100px', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    height: '100%',
+                                                    width: `${Math.min(100, (event.scannedCount / event.max_capacity) * 100)}%`,
+                                                    background: (event.scannedCount / event.max_capacity) < 0.5 ? '#edff66' : (event.scannedCount / event.max_capacity) < 0.8 ? '#ffb366' : '#ff6666',
+                                                    transition: 'width 0.5s ease-out'
+                                                }} />
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div style={{ paddingTop: '16px', borderTop: '1px solid var(--border)', display: 'flex', gap: '12px' }}>
                                         <button
@@ -334,7 +513,9 @@ export default function CollegeAdminDashboard() {
                         ))}
                     </div>
                 </section>
-            ) : (
+            )}
+
+            {activeTab === 'clubs' && (
                 <section>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <h2 style={{ fontSize: '1.5rem' }}>Managed Clubs</h2>
@@ -344,7 +525,7 @@ export default function CollegeAdminDashboard() {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-                        {clubs.map(club => (
+                        {clubs.map((club: any) => (
                             <div key={club.id} className="glass animate-fade" style={{ padding: '24px' }}>
                                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
                                     <div style={{
@@ -374,6 +555,99 @@ export default function CollegeAdminDashboard() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </section>
+            )}
+
+            {activeTab === 'students' && (
+                <section className="animate-fade">
+                    <div className="glass" style={{ padding: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                            <h2 style={{ fontSize: '1.5rem' }}>Student Roster</h2>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>{students.length} Registered Students</div>
+                        </div>
+
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted-foreground)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                                        <th style={{ padding: '16px' }}>Full Name</th>
+                                        <th style={{ padding: '16px' }}>Email</th>
+                                        <th style={{ padding: '16px' }}>Course</th>
+                                        <th style={{ padding: '16px' }}>Year</th>
+                                        <th style={{ padding: '16px' }}>Batch</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {students.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: 'var(--muted-foreground)' }}>No students registered yet.</td>
+                                        </tr>
+                                    ) : students.map((s: any) => (
+                                        <tr key={s.id} style={{ borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>
+                                            <td style={{ padding: '16px', fontWeight: 'bold' }}>{s.full_name}</td>
+                                            <td style={{ padding: '16px', color: 'var(--muted-foreground)' }}>{s.email}</td>
+                                            <td style={{ padding: '16px' }}>{s.course}</td>
+                                            <td style={{ padding: '16px' }}>{s.year}</td>
+                                            <td style={{ padding: '16px' }}>{s.batch}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {activeTab === 'settings' && (
+                <section className="animate-fade">
+                    <div className="glass" style={{ maxWidth: '600px', padding: '40px' }}>
+                        <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Institution Settings</h2>
+                        <form onSubmit={handleUpdateSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '8px', color: 'var(--muted-foreground)' }}>
+                                    Official Email Domain
+                                </label>
+                                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginBottom: '12px' }}>
+                                    Only students with an email ending in this domain can sign up.
+                                    (e.g., <span style={{ color: 'var(--primary)' }}>iitb.ac.in</span> or <span style={{ color: 'var(--primary)' }}>polariscampus.com</span>)
+                                </p>
+                                <div style={{ position: 'relative' }}>
+                                    <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }}>@</span>
+                                    <input
+                                        value={domain}
+                                        onChange={e => setDomain(e.target.value)}
+                                        placeholder="domain.com"
+                                        required
+                                        className="glass"
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 12px 12px 35px',
+                                            background: 'none',
+                                            border: '1px solid var(--border)',
+                                            color: 'white',
+                                            borderRadius: '10px'
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <button type="submit" disabled={isUpdatingSettings} className="button button-primary" style={{ height: '50px' }}>
+                                {isUpdatingSettings ? <Loader2 className="spinner" size={20} /> : 'Save Settings'}
+                            </button>
+                        </form>
+
+                        <div style={{ marginTop: '40px', padding: '20px', background: 'rgba(237, 255, 102, 0.05)', borderRadius: '12px', border: '1px solid rgba(237, 255, 102, 0.1)' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                <Info size={18} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
+                                <div>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px' }}>Why is this important?</p>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', lineHeight: '1.5' }}>
+                                        This domain acts as a whitelist for student verification. When a student tries to sign up, the system checks if their email matches this domain. This prevents outsiders from accessing your college-specific events and passes.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
             )}
@@ -413,8 +687,8 @@ export default function CollegeAdminDashboard() {
             {showCreateEvent && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div className="glass animate-fade" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '40px', position: 'relative' }}>
-                        <button onClick={() => setShowCreateEvent(false)} style={{ position: 'absolute', right: '20px', top: '20px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
-                        <h2 style={{ marginBottom: '24px' }}>Create New Event</h2>
+                        <button onClick={() => { setShowCreateEvent(false); setEditingEventId(null); }} style={{ position: 'absolute', right: '20px', top: '20px', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+                        <h2 style={{ marginBottom: '24px' }}>{editingEventId ? 'Edit Event' : 'Create New Event'}</h2>
                         <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                 <div>
@@ -457,8 +731,21 @@ export default function CollegeAdminDashboard() {
                                 </div>
                             </div>
 
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--muted-foreground)' }}>Venue Capacity</label>
+                                    <input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="e.g. 500" className="glass" style={{ width: '100%', padding: '12px', background: 'none', border: '1px solid var(--border)', color: 'white', borderRadius: '10px' }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--muted-foreground)' }}>Tracking Type</label>
+                                    <div className="glass" style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--primary)', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                        PERCENTAGE MODE
+                                    </div>
+                                </div>
+                            </div>
+
                             <button type="submit" disabled={isCreatingEvent} className="button button-primary" style={{ width: '100%', height: '50px', marginTop: '10px' }}>
-                                {isCreatingEvent ? <Loader2 className="spinner" size={20} /> : 'Launch Event'}
+                                {isCreatingEvent ? <Loader2 className="spinner" size={20} /> : (editingEventId ? 'Update Event' : 'Launch Event')}
                             </button>
                         </form>
                     </div>

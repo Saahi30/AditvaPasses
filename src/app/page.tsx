@@ -22,10 +22,20 @@ export default async function Home() {
         .from('events')
         .select('*, clubs(*)')
         .eq('college_id', p.college_id)
+        .eq('is_published', true)
         .order('event_date', { ascending: true })
         .limit(3);
       collegeEvents = evs || [];
     }
+  } else {
+    // For guest users, show featured/all published events
+    const { data: evs } = await supabase
+      .from('events')
+      .select('*, clubs(*)')
+      .eq('is_published', true)
+      .order('event_date', { ascending: true })
+      .limit(3);
+    collegeEvents = evs || [];
   }
 
   return (

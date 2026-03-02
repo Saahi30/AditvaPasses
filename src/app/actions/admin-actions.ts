@@ -61,6 +61,27 @@ export async function getCollegeAdmins(collegeId: string) {
     return data
 }
 
+export async function createCollege(data: {
+    name: string,
+    email_domain: string,
+    courses: string[],
+    years: string[]
+}) {
+    const supabase = createServiceClient()
+    const { error } = await supabase.from('colleges').insert(data)
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/974hdjkfsdfh')
+    revalidatePath('/auth')
+    return { success: true }
+}
+
+export async function getColleges() {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase.from('colleges').select('*').order('name')
+    if (error) return []
+    return data
+}
+
 export async function createClub(formData: {
     name: string
     headName: string
@@ -224,4 +245,108 @@ export async function issuePasses(formData: {
 
     revalidatePath('/dashboard/college-admin')
     return { success: true, count: newStudents.length }
+}
+export async function updateCollege(collegeId: string, data: {
+    email_domain?: string,
+    courses?: string[],
+    years?: string[],
+    batches?: string[]
+}) {
+    const supabase = createServiceClient()
+
+    const { error } = await supabase
+        .from('colleges')
+        .update({
+            email_domain: data.email_domain,
+            courses: data.courses,
+            years: data.years,
+            batches: data.batches
+        })
+        .eq('id', collegeId)
+
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/dashboard/college-admin')
+    return { success: true }
+}
+
+export async function deleteEvent(eventId: string) {
+    const supabase = createServiceClient()
+    const { error } = await supabase.from('events').delete().eq('id', eventId)
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/dashboard/college-admin')
+    revalidatePath('/events')
+    revalidatePath('/')
+    return { success: true }
+}
+
+export async function updateEvent(eventId: string, data: {
+    title?: string,
+    description?: string,
+    event_date?: string,
+    location?: string,
+    club_id?: string | null,
+    brochure_url?: string | null,
+    images?: string[],
+    is_published?: boolean,
+    max_capacity?: number
+}) {
+    const supabase = createServiceClient()
+
+    const { error } = await supabase
+        .from('events')
+        .update(data)
+        .eq('id', eventId)
+
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/dashboard/college-admin')
+    revalidatePath('/events')
+    revalidatePath('/')
+    return { success: true }
+}
+export async function getCollegeAnalytics(collegeId: string) {
+    const supabase = createServiceClient()
+
+    // 1. Total Students
+    const { count: studentCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('college_id', collegeId)
+        .eq('role', 'student')
+
+    // 2. Active Events
+    const { count: eventCount } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('college_id', collegeId)
+        .eq('is_published', true)
+
+    // 3. Passes Issued vs Scanned
+    // We'll join passes with events to filtered by college_id
+    const { data: passes } = await supabase
+        .from('passes')
+        .select('status, events!inner(college_id)')
+        .eq('events.college_id', collegeId)
+
+    const totalIssued = passes?.length || 0
+    const totalScanned = passes?.filter(p => p.status === 'used').length || 0
+
+    return {
+        students: studentCount || 0,
+        events: eventCount || 0,
+        passesIssued: totalIssued,
+        passesScanned: totalScanned
+    }
+}
+
+export async function getStudents(collegeId: string) {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('college_id', collegeId)
+        .eq('role', 'student')
+        .order('full_name')
+
+    if (error) return []
+    return data
 }

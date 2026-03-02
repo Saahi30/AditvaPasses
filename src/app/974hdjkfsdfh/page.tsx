@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Plus, Users, Building2, Loader2, ArrowRight, X, Mail, Lock, User, ShieldCheck } from 'lucide-react'
-import { createCollegeAdmin, getCollegeAdmins } from '@/app/actions/admin-actions'
+import { createCollegeAdmin, getCollegeAdmins, createCollege, getColleges } from '@/app/actions/admin-actions'
 
 export default function SuperAdminDashboard() {
     const [colleges, setColleges] = useState<any[]>([])
@@ -31,8 +31,8 @@ export default function SuperAdminDashboard() {
     }, [])
 
     async function fetchColleges() {
-        const { data } = await supabase.from('colleges').select('*').order('created_at', { ascending: false })
-        if (data) setColleges(data)
+        const data = await getColleges()
+        setColleges(data)
         setLoading(false)
     }
 
@@ -49,14 +49,14 @@ export default function SuperAdminDashboard() {
         const courseList = courses.split(',').map(c => c.trim())
         const yearList = years.split(',').map(y => y.trim())
 
-        const { error } = await supabase.from('colleges').insert({
+        const result = await createCollege({
             name,
             email_domain: emailDomain,
             courses: courseList,
             years: yearList
         })
 
-        if (!error) {
+        if (result.success) {
             setName('')
             setEmailDomain('')
             setCourses('')
