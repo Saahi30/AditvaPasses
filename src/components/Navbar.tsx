@@ -31,23 +31,25 @@ export default function Navbar() {
     }
 
     return (
-        <nav className="glass" style={{
+        <nav className="glass-premium" style={{
             position: 'fixed',
             top: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
             width: 'max-content',
-            minWidth: 'min(90%, 800px)',
-            padding: '12px 24px',
+            minWidth: 'min(92%, 1000px)',
+            padding: '12px 28px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             zIndex: 1000,
-            borderRadius: '24px'
+            borderRadius: '100px',
         }}>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                <Ticket className="heading" style={{ color: 'var(--primary)', width: '24px', height: '24px' }} />
-                <span style={{ display: 'inline-block' }}>ADITVA <span style={{ color: 'var(--primary)' }}>PASSES</span></span>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '900', fontSize: '1.25rem', letterSpacing: '-0.03em' }}>
+                <div style={{ padding: '6px', borderRadius: '10px', background: 'var(--primary)', color: 'black' }}>
+                    <Ticket style={{ width: '20px', height: '20px' }} />
+                </div>
+                <span className="nav-logo-text" style={{ display: 'inline-block' }}>ADITVA <span style={{ color: 'var(--primary)', opacity: 0.8 }}>PASSES</span></span>
             </Link>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>

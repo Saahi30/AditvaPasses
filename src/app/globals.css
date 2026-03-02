@@ -1,20 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;800&display=swap');
 
 :root {
-  --background: #0a0a0b;
+  --background: #060608;
   --foreground: #ffffff;
   --accent: #edff66;
   /* Neon Lime */
   --accent-foreground: #000000;
   --card: #141416;
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.08);
   --muted: #888888;
   --muted-foreground: #a1a1aa;
   --primary: #edff66;
   --primary-foreground: #000000;
+  --success: #4ade80;
+  --purple-glow: rgba(139, 92, 246, 0.3);
 
   --radius: 12px;
   --glow: 0 0 20px rgba(237, 255, 102, 0.2);
+  --glow-success: 0 0 20px rgba(74, 222, 128, 0.4);
 }
 
 * {
@@ -86,6 +89,83 @@ button,
   border-radius: var(--radius);
 }
 
+.glass-premium {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.neon-glow-primary {
+  box-shadow: var(--glow);
+}
+
+.neon-badge {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.neon-badge-success {
+  background: rgba(74, 222, 128, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  box-shadow: var(--glow-success);
+}
+
+.neon-badge-muted {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.ticket-container {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.ticket-container:hover {
+  transform: translateY(-4px);
+}
+
+.perforation-line {
+  position: relative;
+  border-top: 2px dashed var(--border);
+  margin: 0 24px;
+}
+
+.perforation-line::before,
+.perforation-line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.perforation-line::before {
+  left: -37px;
+}
+
+.perforation-line::after {
+  right: -37px;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
@@ -120,11 +200,13 @@ button,
 .hero-gradient {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 50% 0%, rgba(237, 255, 102, 0.15) 0%, transparent 60%);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(237, 255, 102, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 50% 0%, rgba(237, 255, 102, 0.05) 0%, transparent 50%);
   z-index: -1;
 }
 
@@ -178,11 +260,11 @@ select.auth-input {
   }
 
   h1 {
-    font-size: 2rem !important;
+    font-size: 2.2rem !important;
   }
 
   h2 {
-    font-size: 1.5rem !important;
+    font-size: 1.8rem !important;
   }
 
   .mobile-stack {
@@ -200,11 +282,46 @@ select.auth-input {
   .auth-card {
     padding: 32px 20px !important;
   }
+
+  .mobile-ticket {
+    flex-direction: column !important;
+  }
+
+  .mobile-qr-section {
+    border-left: none !important;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1) !important;
+    padding: 40px 20px !important;
+    position: relative;
+  }
+
+  .mobile-qr-section::before,
+  .mobile-qr-section::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    width: 24px;
+    height: 24px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+  }
+
+  .mobile-qr-section::before {
+    left: -12px;
+  }
+
+  .mobile-qr-section::after {
+    right: -12px;
+  }
 }
 
 @media (max-width: 480px) {
   .button {
     width: 100%;
     text-align: center;
+  }
+
+  .nav-logo-text {
+    display: none !important;
   }
 }

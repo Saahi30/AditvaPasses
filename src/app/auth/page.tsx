@@ -214,7 +214,7 @@ export default function AuthPage() {
                                     <User size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }} />
                                     <input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} required className="auth-input" />
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div className="responsive-grid" style={{ display: 'grid', gap: '16px' }}>
                                     <select value={course} onChange={e => setCourse(e.target.value)} required className="auth-input" style={{ paddingLeft: '12px' }}>
                                         <option value="">Course</option>
                                         {selectedCollege.courses.map((c: string) => <option key={c} value={c}>{c}</option>)}

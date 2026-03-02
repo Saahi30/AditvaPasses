@@ -352,10 +352,13 @@ export default function CollegeAdminDashboard() {
 
     return (
         <main style={{ padding: '160px 24px 80px', maxWidth: '1200px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
+            <header style={{ marginBottom: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '32px' }}>
                 <div>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>College <span style={{ color: 'var(--primary)' }}>Admin</span></h1>
-                    <p style={{ color: 'var(--muted-foreground)' }}>Manage your campus life from one dashboard.</p>
+                    <div style={{ color: 'var(--primary)', fontWeight: '900', fontSize: '0.75rem', marginBottom: '12px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                        Campus Intelligence
+                    </div>
+                    <h1 style={{ fontSize: '3rem', marginBottom: '8px', letterSpacing: '-0.04em' }}>College <span style={{ color: 'var(--primary)' }}>Admin</span></h1>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem' }}>Manage your campus data and logistics.</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px' }}>

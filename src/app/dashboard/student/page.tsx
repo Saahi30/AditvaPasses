@@ -37,14 +37,29 @@ export default function StudentDashboard() {
 
     return (
         <main style={{ padding: '160px 24px 80px', maxWidth: '1000px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '64px', textAlign: 'center' }}>
-                <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '16px', background: 'rgba(237, 255, 102, 0.05)', color: 'var(--primary)', marginBottom: '16px' }}>
-                    <ShieldCheck size={24} />
+            <header style={{ marginBottom: '80px', textAlign: 'center' }}>
+                <div style={{
+                    display: 'inline-flex',
+                    padding: '8px 16px',
+                    borderRadius: '100px',
+                    background: 'rgba(237, 255, 102, 0.1)',
+                    color: 'var(--primary)',
+                    marginBottom: '24px',
+                    fontSize: '0.8rem',
+                    fontWeight: '800',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    border: '1px solid rgba(237, 255, 102, 0.2)',
+                    boxShadow: '0 0 20px rgba(237, 255, 102, 0.1)'
+                }}>
+                    Institutional Wallet
                 </div>
-                <h1 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.02em' }}>
-                    Pass <span style={{ color: 'var(--primary)' }}>Wallet</span>
+                <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.04em', lineHeight: '1' }}>
+                    YOUR <span style={{ color: 'var(--primary)' }}>PASSES</span>
                 </h1>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem' }}>Your secure digital entrance to campus events.</p>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem', maxWidth: '500px', margin: '0 auto' }}>
+                    Secure, high-fidelity digital access for campus events.
+                </p>
             </header>
 
             {loading ? (
@@ -64,119 +79,91 @@ export default function StudentDashboard() {
                     <Link href="/" className="button button-primary" style={{ padding: '16px 32px' }}>Browse Home</Link>
                 </section>
             ) : (
-                <div style={{ display: 'grid', gap: '32px' }}>
+                <div style={{ display: 'grid', gap: '40px' }}>
                     {passes.map((pass: any) => (
-                        <div key={pass.id} className="animate-fade responsive-grid" style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'minmax(300px, 1fr) 240px',
-                            padding: '0',
-                            overflow: 'hidden',
-                            borderRadius: '24px',
-                            background: 'rgba(255,255,255,0.03)',
-                            border: '1px solid var(--border)',
-                            position: 'relative'
+                        <div key={pass.id} className="animate-fade ticket-container responsive-grid mobile-ticket" style={{
+                            gridTemplateColumns: '1fr 280px',
+                            background: 'rgba(255,255,255,0.02)',
                         }}>
                             {/* Ticket Info Section */}
                             <div style={{ padding: '40px', position: 'relative' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                                    <div style={{
-                                        padding: '6px 16px',
-                                        borderRadius: '100px',
-                                        background: pass.status === 'valid' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                                        color: pass.status === 'valid' ? '#4ade80' : 'var(--muted-foreground)',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '800',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.05em'
-                                    }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                    <div className={`neon-badge ${pass.status === 'valid' ? 'neon-badge-success' : 'neon-badge-muted'}`}>
                                         {pass.status === 'valid' ? <CheckCircle2 size={14} /> : <Clock size={14} />}
                                         {pass.status === 'valid' ? 'Verified Pass' : 'Already Scanned'}
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.1)', fontWeight: 'bold' }}>#{pass.id.slice(0, 8).toUpperCase()}</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)', fontWeight: 'bold', fontFamily: 'monospace' }}>#{pass.id.slice(0, 8).toUpperCase()}</span>
                                 </div>
 
-                                <h3 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '16px', color: 'white' }}>{pass.events.title}</h3>
+                                <h3 style={{ fontSize: '2rem', lineHeight: '1.1', fontWeight: '800', marginBottom: '24px', letterSpacing: '-0.03em' }}>
+                                    {pass.events.title}
+                                </h3>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--muted-foreground)' }}>
-                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Calendar size={16} />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '40px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                            <Calendar size={18} />
                                         </div>
                                         <div>
-                                            <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Date & Time</p>
-                                            <p style={{ color: 'white', fontSize: '0.95rem', fontWeight: '500' }}>{new Date(pass.events.event_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                                            <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted-foreground)', marginBottom: '2px' }}>Date & Time</p>
+                                            <p style={{ fontWeight: '600', fontSize: '1rem' }}>{new Date(pass.events.event_date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--muted-foreground)' }}>
-                                        <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <MapPin size={16} />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                            <MapPin size={18} />
                                         </div>
                                         <div>
-                                            <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Location</p>
-                                            <p style={{ color: 'white', fontSize: '0.95rem', fontWeight: '500' }}>{pass.events.location}</p>
+                                            <p style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted-foreground)', marginBottom: '2px' }}>Location</p>
+                                            <p style={{ fontWeight: '600', fontSize: '1rem' }}>{pass.events.location}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <Link href={`/pass/${pass.id}`} className="button button-outline" style={{ fontSize: '0.85rem', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-                                        Full Pass Details <ArrowRight size={14} />
-                                    </Link>
-                                </div>
+                                <Link href={`/pass/${pass.id}`} className="button button-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', borderRadius: '100px' }}>
+                                    Full Pass Details <ArrowRight size={16} />
+                                </Link>
+                            </div>
 
-                                {/* Perforation Lines */}
-                                <div className="mobile-hide" style={{
-                                    position: 'absolute',
-                                    right: '-12px',
-                                    top: '0',
-                                    bottom: '0',
-                                    width: '24px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'space-around',
-                                    zIndex: 2,
-                                    pointerEvents: 'none'
-                                }}>
-                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#0a0a0b', border: '1px solid var(--border)' }}></div>
-                                    <div style={{ borderRight: '2px dashed var(--border)', height: '100%', margin: '0 auto' }}></div>
-                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#0a0a0b', border: '1px solid var(--border)', marginTop: 'auto' }}></div>
-                                </div>
+                            {/* Center Perforation - Mobile Hide handled in CSS */}
+                            <div className="perforation-line mobile-hide" style={{ position: 'absolute', top: '0', bottom: '0', right: '280px', margin: '0', borderLeft: '2px dashed rgba(255,255,255,0.1)', borderTop: 'none', width: '2px' }}>
+                                <div style={{ position: 'absolute', top: '-12px', left: '-12px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--background)', border: '1px solid var(--border)' }}></div>
+                                <div style={{ position: 'absolute', bottom: '-12px', left: '-12px', width: '24px', height: '24px', borderRadius: '50%', background: 'var(--background)', border: '1px solid var(--border)' }}></div>
                             </div>
 
                             {/* QR Section */}
-                            <div style={{
-                                background: pass.status === 'valid' ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
-                                color: 'black',
+                            <div className="mobile-qr-section" style={{
+                                background: 'rgba(255,255,255,0.01)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 padding: '40px',
-                                textAlign: 'center',
-                                transition: 'all 0.3s'
+                                borderLeft: '1px solid rgba(255,255,255,0.05)'
                             }}>
                                 <div style={{
-                                    borderRadius: '20px',
+                                    borderRadius: '24px',
                                     background: 'white',
-                                    padding: '20px',
-                                    boxShadow: pass.status === 'valid' ? '0 15px 35px rgba(237, 255, 102, 0.4)' : 'none',
-                                    marginBottom: '20px',
-                                    opacity: pass.status === 'valid' ? 1 : 0.3,
-                                    filter: pass.status === 'valid' ? 'none' : 'grayscale(1)'
+                                    padding: '16px',
+                                    boxShadow: pass.status === 'valid' ? '0 0 40px rgba(237, 255, 102, 0.2)' : 'none',
+                                    marginBottom: '24px',
+                                    opacity: pass.status === 'valid' ? 1 : 0.2,
+                                    filter: pass.status === 'valid' ? 'none' : 'grayscale(1)',
+                                    transition: 'all 0.5s ease'
                                 }}>
                                     <QRCodeSVG
                                         value={pass.qr_code}
-                                        size={140}
+                                        size={160}
                                         level="H"
                                         includeMargin={false}
+                                        fgColor={pass.status === 'valid' ? '#000' : '#444'}
                                     />
                                 </div>
-                                <div style={{ textAlign: 'center', color: pass.status === 'valid' ? 'black' : 'var(--muted-foreground)' }}>
-                                    <p style={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Gate Entry Code</p>
-                                    <p style={{ fontSize: '1.1rem', fontWeight: '900', letterSpacing: '0.05em' }}>{pass.qr_code.slice(0, 8).toUpperCase()}</p>
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '4px' }}>Gate Code</p>
+                                    <p style={{ fontSize: '1.25rem', fontWeight: '900', letterSpacing: '0.1em', color: pass.status === 'valid' ? 'var(--primary)' : 'var(--muted-foreground)' }}>
+                                        {pass.qr_code.slice(0, 8).toUpperCase()}
+                                    </p>
                                 </div>
                             </div>
                         </div>

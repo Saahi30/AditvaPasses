@@ -92,10 +92,23 @@ export default function SuperAdminDashboard() {
 
     return (
         <main style={{ padding: '160px 24px 80px', maxWidth: '1000px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '48px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <header style={{ marginBottom: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div>
-                    <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '8px' }}>SUPER ADMIN ACCESS</div>
-                    <h1 style={{ fontSize: '2.5rem' }}>Managed <span style={{ color: 'var(--primary)' }}>Colleges</span></h1>
+                    <div style={{
+                        color: 'var(--primary)',
+                        fontWeight: '900',
+                        fontSize: '0.75rem',
+                        marginBottom: '12px',
+                        letterSpacing: '0.15em',
+                        padding: '6px 12px',
+                        background: 'rgba(237, 255, 102, 0.1)',
+                        width: 'max-content',
+                        borderRadius: '4px',
+                        textTransform: 'uppercase'
+                    }}>
+                        Global Orchestration
+                    </div>
+                    <h1 style={{ fontSize: '3rem', letterSpacing: '-0.04em' }}>Managed <span style={{ color: 'var(--primary)' }}>Tenants</span></h1>
                 </div>
                 <button className="button button-primary" onClick={() => setShowAdd(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Plus size={18} /> Add College

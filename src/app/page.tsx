@@ -73,7 +73,7 @@ export default async function Home() {
           }
         </p>
 
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+        <div className="mobile-stack" style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '40px' }}>
           <Link href="/dashboard" className="button button-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {user ? 'Open Wallet' : 'Get Started'} <MoveRight size={18} />
           </Link>
@@ -83,25 +83,76 @@ export default async function Home() {
             </Link>
           )}
         </div>
+
+        {/* Demo Mode Section */}
+        {!user && (
+          <div className="animate-fade mobile-stack" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center', opacity: 0.9 }}>
+            <p style={{ width: '100%', fontSize: '0.9rem', color: 'var(--muted-foreground)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+              Instant Demo
+            </p>
+            <form action={async () => {
+              'use server';
+              const { loginAsDemo } = await import('@/app/actions/demo-actions');
+              await loginAsDemo('student');
+            }}>
+              <button className="glass" style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                gap: '12px',
+                padding: '12px 24px',
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                color: 'white',
+                borderRadius: '100px',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <UserIcon size={18} /> Student Persona
+              </button>
+            </form>
+            <form action={async () => {
+              'use server';
+              const { loginAsDemo } = await import('@/app/actions/demo-actions');
+              await loginAsDemo('admin');
+            }}>
+              <button className="glass" style={{
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                gap: '12px',
+                padding: '12px 24px',
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                color: 'white',
+                borderRadius: '100px',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}>
+                <ShieldCheck size={18} /> Admin Persona
+              </button>
+            </form>
+          </div>
+        )}
       </section>
 
       {/* Feature Grid - Only show if not logged in */}
       {!user && (
-        <section className="animate-fade" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '100px' }}>
-          <div className="glass" style={{ padding: '32px' }}>
+        <section className="animate-fade hero-gradient" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '100px', position: 'relative' }}>
+          <div className="glass-premium" style={{ padding: '40px' }}>
             <ShieldCheck size={32} style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-            <h3 style={{ marginBottom: '12px' }}>Secure QR Codes</h3>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>Indestructible digital signatures ensure every pass is authentic and single-use.</p>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.5rem' }}>Secure QR Ecosystem</h3>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: '1rem', lineHeight: '1.6' }}>Indestructible digital signatures ensure every pass is authentic and single-use for your campus security.</p>
           </div>
-          <div className="glass" style={{ padding: '32px' }}>
+          <div className="glass-premium" style={{ padding: '40px' }}>
             <Zap size={32} style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-            <h3 style={{ marginBottom: '12px' }}>Instant Delivery</h3>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>Send passes via email or WhatsApp in seconds. No more physical printing delays.</p>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.5rem' }}>Instant Distribution</h3>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: '1rem', lineHeight: '1.6' }}>Target specific batches or courses and deliver tickets via email in milliseconds. No delays, no friction.</p>
           </div>
-          <div className="glass" style={{ padding: '32px' }}>
+          <div className="glass-premium" style={{ padding: '40px' }}>
             <Ticket size={32} style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-            <h3 style={{ marginBottom: '12px' }}>Smart Wallet</h3>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>Students keep all their event passes in one high-performance digital wallet.</p>
+            <h3 style={{ marginBottom: '12px', fontSize: '1.5rem' }}>High-Fidelity Wallet</h3>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: '1rem', lineHeight: '1.6' }}>Premium glassmorphism interface that students love to show off. A digital asset for institutional pride.</p>
           </div>
         </section>
       )}
